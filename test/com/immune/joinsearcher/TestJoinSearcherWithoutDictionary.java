@@ -9,8 +9,6 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
@@ -25,9 +23,12 @@ import org.apache.lucene.util.Version;
 import org.junit.Test;
 
 import com.immune.joinsearcher.factory.IndexFactory;
+import com.immune.joinsearcher.joinsearchers.JoinSearcher;
 import com.immune.joinsearcher.joinsearchers.JoinSearcherWithoutDictionary;
 import com.immune.joinsearcher.models.JoinCriteria;
+import com.immune.joinsearcher.models.JoinField;
 import com.immune.joinsearcher.models.constants.IndexTables;
+import com.immune.joinsearcher.models.constants.JoinOperators;
 
 public class TestJoinSearcherWithoutDictionary extends TestCase {
 	Directory booksDir;
@@ -51,150 +52,9 @@ public class TestJoinSearcherWithoutDictionary extends TestCase {
 	    
 	    IndexWriter ratingsIndexWriter = new IndexWriter(ratingsDir, new StandardAnalyzer(Version.LUCENE_30), true, IndexWriter.MaxFieldLength.UNLIMITED);
 	    
-	    // 0
-	    Document doc = new Document();
-		doc.add(new Field("id", "1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author1", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-
-	    // 1
-	    doc = new Document();
-	    doc.add(new Field("id", "2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author2", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 2, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 2, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-
-	    // 2
-	    doc = new Document();
-	    doc.add(new Field("id", "3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author3", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 3, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 3, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-
-	    // 3
-	    doc = new Document();
-	    doc.add(new Field("id", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author4", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 4, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 4, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-	    booksIndexWriter.commit();
-
-	    // 4
-	    doc = new Document();
-	    doc.add(new Field("id", "5", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name5", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author4", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 5, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 5, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-
-	    // 5
-	    doc = new Document();
-	    doc.add(new Field("id", "6", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name6", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author4", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-		
-		// 6
-	    doc = new Document();
-	    doc.add(new Field("id", "7", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name7", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author5", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("authorName", "author5", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 2, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-		
-		// 7
-	    doc = new Document();
-	    doc.add(new Field("id", "8", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name8", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author6", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		//doc.add(new Field("authorName", "author5", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", "" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-		
-		// 8
-	    doc = new Document();
-	    doc.add(new Field("id", "9", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name", "name9", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("content", "this book is written by author6", Field.Store.NO, Field.Index.ANALYZED));
-		doc.add(new Field("authorId", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		//doc.add(new Field("authorName", "author5", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		//doc.add(new Field("rating", "" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		booksIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("id2", "1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name2", "author1", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		authorssIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("id2", "2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name2", "author2", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		authorssIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("id2", "3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name2", "author3", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		authorssIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("id2", "4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("name2", "author4", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		authorssIndexWriter.addDocument(doc);
-		
-		//Ratings Indices
-		doc = new Document();
-		doc.add(new Field("rating_id", 1 + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 1, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", String.valueOf(1), Field.Store.YES, Field.Index.NOT_ANALYZED));
-		ratingsIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("rating_id", 2 + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 2, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", String.valueOf(2), Field.Store.YES, Field.Index.NOT_ANALYZED));
-		ratingsIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("rating_id", 3 + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 3, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", String.valueOf(3), Field.Store.YES, Field.Index.NOT_ANALYZED));
-		ratingsIndexWriter.addDocument(doc);
-		
-		doc = new Document();
-		doc.add(new Field("rating_id", 4 + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("reviewer", "reviewer" + 4, Field.Store.YES, Field.Index.NOT_ANALYZED));
-		doc.add(new Field("rating", String.valueOf(4), Field.Store.YES, Field.Index.NOT_ANALYZED));
-		ratingsIndexWriter.addDocument(doc);
+	    JoinSearchTestUtil.addBooksDocuments(booksIndexWriter);
+	    JoinSearchTestUtil.addAuthorsDocuments(authorssIndexWriter);
+	    JoinSearchTestUtil.addRatingsDocuments(ratingsIndexWriter);
 
 	    this.booksIndexSearcher = new IndexSearcher(booksIndexWriter.getReader());
 	    this.authorsIndexSearcher = new IndexSearcher(authorssIndexWriter.getReader());
@@ -204,26 +64,30 @@ public class TestJoinSearcherWithoutDictionary extends TestCase {
 	    IndexFactory.addIndexSearcher(IndexTables.RATING.name(), this.ratingsIndexSearcher);
 	    
 	    
-//	    booksIndexWriter.close();
-//	    booksDir.close();
-//	    authorssIndexWriter.close();
-//	    authorsDir.close();
-//	    ratingsIndexWriter.close();
-//	    ratingsDir.close();
+	    booksIndexWriter.close();
+	    booksDir.close();
+	    authorssIndexWriter.close();
+	    authorsDir.close();
+	    ratingsIndexWriter.close();
+	    ratingsDir.close();
 	}
 	
 	@Test
 	public void testSearchAndJoin() throws IOException, ParseException{
-		JoinSearcherWithoutDictionary searcher = new JoinSearcherWithoutDictionary(this.booksIndexSearcher);
-		
-		String[] fromFields = {"authorId", "authorName"};
-		String[] toFields = {"id2", "name2"};
-		String[] ratingFromFields = {"reviewer", "rating"};
-		String[] ratingToFields = {"reviewer", "rating"};
+		JoinSearcher searcher = new JoinSearcherWithoutDictionary(this.booksIndexSearcher);
 		
 		List<JoinCriteria> joinCriteria = new ArrayList<JoinCriteria>();
-		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, fromFields, toFields));
-		joinCriteria.add(new JoinCriteria(IndexTables.RATING, ratingFromFields, ratingToFields));
+		
+		List<JoinField> authorsJoinFields = new ArrayList<JoinField>();
+		authorsJoinFields.add(new JoinField("authorId", "id2"));
+		authorsJoinFields.add(new JoinField("authorName", "name2"));
+		
+		List<JoinField> ratingsJoinFields = new ArrayList<JoinField>();
+		ratingsJoinFields.add(new JoinField("reviewer", "reviewer"));
+		ratingsJoinFields.add(new JoinField("rating", "rating"));
+		
+		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, authorsJoinFields));
+		joinCriteria.add(new JoinCriteria(IndexTables.RATING, ratingsJoinFields));
 		
 		
 		Query booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author4");
@@ -242,13 +106,7 @@ public class TestJoinSearcherWithoutDictionary extends TestCase {
 				///
 		////
 		
-		//long beforeFirst = System.currentTimeMillis();
 		List<Map<String, String>> results = searcher.searchAndJoin(joinCriteria, booksQuery);
-		
-		//System.out.println(System.currentTimeMillis() - beforeFirst);
-		//long beforeSecond = System.currentTimeMillis();
-		//searcher.searchAndJoin(joinCriteria, booksQuery);
-		//System.out.println(System.currentTimeMillis() - beforeSecond);
 		
 		Assert.assertEquals(3, results.size());
 		
@@ -305,14 +163,17 @@ public class TestJoinSearcherWithoutDictionary extends TestCase {
 		Assert.assertNull(keyValue.get("rating_id"));
 		
 		//WRONG FIELD names will not result into Join
-		String[] fromFields3 = {"authorId", "authorName"};
-		String[] toFields3 = {"id2", "name22"};
-		String[] ratingFromFields3 = {"reviewer", "rating"};
-		String[] ratingToFields3 = {"reviewer22", "rating"};
+		authorsJoinFields = new ArrayList<JoinField>();
+		authorsJoinFields.add(new JoinField("authorId", "id2", JoinOperators.LESSER));
+		authorsJoinFields.add(new JoinField("authorName", "name22", JoinOperators.GREATER));
+		
+		ratingsJoinFields = new ArrayList<JoinField>();
+		ratingsJoinFields.add(new JoinField("reviewer", "reviewer22"));
+		ratingsJoinFields.add(new JoinField("rating", "rating"));
 		
 		joinCriteria = new ArrayList<JoinCriteria>();
-		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, fromFields3, toFields3));
-		joinCriteria.add(new JoinCriteria(IndexTables.RATING, ratingFromFields3, ratingToFields3));
+		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, authorsJoinFields));
+		joinCriteria.add(new JoinCriteria(IndexTables.RATING, ratingsJoinFields));
 		
 		booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author4");
 		results = searcher.searchAndJoin(joinCriteria, booksQuery);
@@ -326,6 +187,22 @@ public class TestJoinSearcherWithoutDictionary extends TestCase {
 			Assert.assertNull(map.get("name2"));
 			Assert.assertNull(map.get("rating_id"));			
 		}
+		
+		//For complex queries
+		ratingsJoinFields = new ArrayList<JoinField>();
+		ratingsJoinFields.add(new JoinField("rating", "rating", JoinOperators.GREATER));
+		
+		joinCriteria = new ArrayList<JoinCriteria>();
+		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, ratingsJoinFields));
+		
+		booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author1");
+		
+		results = searcher.searchAndJoin(joinCriteria, booksQuery);
+		
+		Assert.assertEquals(results.size(), 1);
+		Map<String, String> map = results.get(0);
+		
+		Assert.assertNotSame(1, map.get("rating"));
 
 		
 		

@@ -23,6 +23,9 @@ import org.apache.lucene.util.Version;
 
 import com.immune.joinsearcher.factory.RAMIndexFactory;
 import com.immune.joinsearcher.models.JoinCriteria;
+import com.immune.joinsearcher.models.JoinField;
+import com.immune.joinsearcher.models.constants.JoinOperators;
+import com.immune.joinsearcher.utils.QueryBuilder;
 
 public class JoinSearcherWithTempIndex implements JoinSearcher {
 
@@ -52,12 +55,16 @@ public class JoinSearcherWithTempIndex implements JoinSearcher {
 			BooleanQuery query;
 			for (JoinCriteria joinCriterium: joinCriteria) {
 				query = new BooleanQuery();
-				int sizeLimit = joinCriterium.getFromFields().length;
-				for (int i = 0; i < sizeLimit; i++) {
-					String fromfield = joinCriterium.getFromFields()[i];
-					String toField = joinCriterium.getToFields()[i];
+				//int sizeLimit = joinCriterium.getFromFields().length;
+				for (JoinField joinField : joinCriterium.getJoinFields()) {
+					String fromfield = joinField.getFromField();
+					String toField = joinField.getToField();
 					if(doc.get(fromfield) != null){
-						query.add(new TermQuery(new Term(toField, doc.get(fromfield))), BooleanClause.Occur.MUST);
+						if( !joinField.getJoinOperator().equals(JoinOperators.NOTEQUAL)) {
+							query.add(QueryBuilder.getQuery(toField, doc.get(fromfield), joinField.getJoinOperator()), BooleanClause.Occur.MUST);
+						}else {
+							query.add(QueryBuilder.getQuery(toField, doc.get(fromfield), joinField.getJoinOperator()), BooleanClause.Occur.MUST_NOT);
+						}
 					}else{
 						QueryParser queryParser= new QueryParser(Version.LUCENE_30, toField, new StandardAnalyzer(Version.LUCENE_30));
 						queryParser.setAllowLeadingWildcard(true);
@@ -68,7 +75,9 @@ public class JoinSearcherWithTempIndex implements JoinSearcher {
 				
 				IndexSearcher lookupTableSearcher = RAMIndexFactory.getRAMIndexSearcher(joinCriterium.getLookupTable()); 
 				
+				//long now = System.currentTimeMillis();
 				TopDocs topDocs = lookupTableSearcher.search(query, 1);
+				//System.out.println(System.currentTimeMillis() - now);
 				Map<String, String> keyValues = new HashMap<String, String>();
 				
 				if(topDocs.scoreDocs.length > 0){

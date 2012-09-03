@@ -45,6 +45,11 @@ public class RAMIndexFactory {
 		return ramIndexSearchers.get(lookupTable.name());
 	}
 	
+	//Used from test case
+	public static void addIndexSearcher(String lookupTableName, IndexSearcher indexSearcher) {
+		ramIndexSearchers.put(lookupTableName, indexSearcher);
+	}
+	
 		
 	public static void addIndexSearcher(String lookupTableName) throws IOException, ParseException{
 		IndexSearcher indexSearcher = getIndexSearcher(IndexTables.valueOf(lookupTableName));

@@ -2,7 +2,6 @@ package com.immune.joinsearcher;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -13,21 +12,25 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 import org.junit.Test;
 
-import com.immune.joinsearcher.factory.IndexFactory;
-import com.immune.joinsearcher.joinsearchers.JoinSearcherWithDictionary2;
+import com.immune.joinsearcher.factory.RAMIndexFactory;
+import com.immune.joinsearcher.joinsearchers.JoinSearcher;
+import com.immune.joinsearcher.joinsearchers.JoinSearcherWithTempIndex;
 import com.immune.joinsearcher.models.JoinCriteria;
 import com.immune.joinsearcher.models.JoinField;
 import com.immune.joinsearcher.models.constants.IndexTables;
-import com.immune.joinsearcher.utils.Utils;
+import com.immune.joinsearcher.models.constants.JoinOperators;
 
-public class TestJoinSearcherWithDictionary2 extends TestCase {
+public class TestJoinSearcherWithTempIndex extends TestCase {
 	Directory booksDir;
 	Directory authorsDir;
 	Directory ratingsDir;
@@ -35,7 +38,7 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 	IndexSearcher authorsIndexSearcher;
 	IndexSearcher ratingsIndexSearcher;
 	
-	public TestJoinSearcherWithDictionary2() throws IOException {
+	public TestJoinSearcherWithTempIndex() throws IOException {
 
 	    booksDir = new RAMDirectory();
 	    
@@ -52,13 +55,13 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 	    JoinSearchTestUtil.addBooksDocuments(booksIndexWriter);
 	    JoinSearchTestUtil.addAuthorsDocuments(authorssIndexWriter);
 	    JoinSearchTestUtil.addRatingsDocuments(ratingsIndexWriter);
-	    
+
 	    this.booksIndexSearcher = new IndexSearcher(booksIndexWriter.getReader());
 	    this.authorsIndexSearcher = new IndexSearcher(authorssIndexWriter.getReader());
 	    this.ratingsIndexSearcher = new IndexSearcher(ratingsIndexWriter.getReader());
 	    
-	    IndexFactory.addIndexSearcher(IndexTables.AUTHORS.name(), authorsIndexSearcher);
-	    IndexFactory.addIndexSearcher(IndexTables.RATING.name(), this.ratingsIndexSearcher);
+	    RAMIndexFactory.addIndexSearcher(IndexTables.AUTHORS.name(), this.authorsIndexSearcher);
+	    RAMIndexFactory.addIndexSearcher(IndexTables.RATING.name(), this.ratingsIndexSearcher);
 	    
 	    
 	    booksIndexWriter.close();
@@ -71,7 +74,7 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 	
 	@Test
 	public void testSearchAndJoin() throws IOException, ParseException{
-		JoinSearcherWithDictionary2 searcher = new JoinSearcherWithDictionary2(this.booksIndexSearcher);
+		JoinSearcher searcher = new JoinSearcherWithTempIndex(this.booksIndexSearcher);
 		
 		List<JoinCriteria> joinCriteria = new ArrayList<JoinCriteria>();
 		
@@ -89,13 +92,7 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 		
 		Query booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author4");
 		
-		//long beforeFirst = System.currentTimeMillis();
 		List<Map<String, String>> results = searcher.searchAndJoin(joinCriteria, booksQuery);
-		
-		//System.out.println(System.currentTimeMillis() - beforeFirst);
-		//long beforeSecond = System.currentTimeMillis();
-		//searcher.searchAndJoin(joinCriteria, booksQuery);
-		//System.out.println(System.currentTimeMillis() - beforeSecond);
 		
 		Assert.assertEquals(3, results.size());
 		
@@ -135,7 +132,7 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 		//Missing fields in main Index
 		booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author6");
 		results = searcher.searchAndJoin(joinCriteria, booksQuery);
-				
+		
 		Assert.assertEquals(2, results.size());
 		keyValue = results.get(0);
 		Assert.assertEquals(6, keyValue.keySet().size());
@@ -143,7 +140,7 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 		Assert.assertNull(keyValue.get("id2"));
 		Assert.assertNull(keyValue.get("name2"));
 		Assert.assertEquals(keyValue.get("rating_id"), "1");
-				
+		
 		keyValue = results.get(1);
 		Assert.assertEquals(4, keyValue.keySet().size());
 		Assert.assertEquals(keyValue.get("id"), "9");
@@ -152,16 +149,15 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 		Assert.assertNull(keyValue.get("rating_id"));
 		
 		//WRONG FIELD names will not result into Join
-		joinCriteria = new ArrayList<JoinCriteria>();
-		
 		authorsJoinFields = new ArrayList<JoinField>();
-		authorsJoinFields.add(new JoinField("authorId", "id2"));
-		authorsJoinFields.add(new JoinField("authorName", "name22"));
+		authorsJoinFields.add(new JoinField("authorId", "id2", JoinOperators.LESSER));
+		authorsJoinFields.add(new JoinField("authorName", "name22", JoinOperators.GREATER));
 		
 		ratingsJoinFields = new ArrayList<JoinField>();
 		ratingsJoinFields.add(new JoinField("reviewer", "reviewer22"));
 		ratingsJoinFields.add(new JoinField("rating", "rating"));
 		
+		joinCriteria = new ArrayList<JoinCriteria>();
 		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, authorsJoinFields));
 		joinCriteria.add(new JoinCriteria(IndexTables.RATING, ratingsJoinFields));
 		
@@ -177,17 +173,31 @@ public class TestJoinSearcherWithDictionary2 extends TestCase {
 			Assert.assertNull(map.get("name2"));
 			Assert.assertNull(map.get("rating_id"));			
 		}
+		
+		//For complex queries
+		ratingsJoinFields = new ArrayList<JoinField>();
+		ratingsJoinFields.add(new JoinField("rating", "rating", JoinOperators.GREATER));
+		
+		joinCriteria = new ArrayList<JoinCriteria>();
+		joinCriteria.add(new JoinCriteria(IndexTables.AUTHORS, ratingsJoinFields));
+		
+		booksQuery = new QueryParser(Version.LUCENE_30, "content", new StandardAnalyzer(Version.LUCENE_30)).parse("author1");
+		
+		results = searcher.searchAndJoin(joinCriteria, booksQuery);
+		
+		Assert.assertEquals(results.size(), 1);
+		Map<String, String> map = results.get(0);
+		
+		Assert.assertNotSame(1, map.get("rating"));
 
 		
 		
-		String[] fromFields2 = {"authorId"};
-		String[] toFields2 = {"id2"};
+		//String[] fromFields2 = {"authorId"};
+		//String[] toFields2 = {"id2"};
 		
-		authorsJoinFields = new ArrayList<JoinField>();
-		authorsJoinFields.add(new JoinField("authorId", "id2"));
 		
-		searcher.searchAndJoin(Arrays.asList(new JoinCriteria(IndexTables.AUTHORS, authorsJoinFields)), booksQuery);
-		Assert.assertNotNull(searcher.getDictionary(IndexTables.AUTHORS, Utils.sortTokenize(Arrays.asList(toFields2), JoinSearcherWithDictionary2.KEY_TOKENIZER)));
+		//searcher.searchAndJoin(Arrays.asList(new JoinCriteria(IndexTables.AUTHORS, fromFields2, toFields2)), booksQuery);
+		//Assert.assertNotNull(searcher.getDictionary(IndexTables.AUTHORS, Utils.sortTokenize(Arrays.asList(toFields2), JoinSearcherWithDictionary2.KEY_TOKENIZER)));
 	}
 	
 	@Test

@@ -26,6 +26,7 @@ import com.immune.joinsearcher.factory.IndexFactory;
 import com.immune.joinsearcher.models.FieldNamesMap;
 import com.immune.joinsearcher.models.FieldValuesMap;
 import com.immune.joinsearcher.models.JoinCriteria;
+import com.immune.joinsearcher.models.JoinField;
 import com.immune.joinsearcher.models.TableMap;
 import com.immune.joinsearcher.models.constants.IndexTables;
 
@@ -113,16 +114,18 @@ public class JoinSearcherWithDictionary2 implements JoinSearcher {
 			/**Loop here append from each criteria to listOfKeyValues**/
 			for (JoinCriteria joinCriterium: joinCriteria) {
 				List<String> joinValues = new ArrayList<String>();
-				
-				for (String fromField : joinCriterium.getFromFields()) {
-					if(doc.get(fromField) != null){
-						joinValues.add(doc.get(fromField));
+				List<String> toFields = new ArrayList<String>();
+				 
+				for (JoinField joinField : joinCriterium.getJoinFields()) {
+					toFields.add(joinField.getToField());
+					if(doc.get(joinField.getFromField()) != null){
+						joinValues.add(doc.get(joinField.getFromField()));
 					}else{
 						joinValues.add("NONE");
 					}
 				}
 				
-				Map<String, Map<String, String>> authorsDictionary =  getDictionary(joinCriterium.getLookupTable(), Utils.tokenize(Arrays.asList(joinCriterium.getToFields()), KEY_TOKENIZER));
+				Map<String, Map<String, String>> authorsDictionary =  getDictionary(joinCriterium.getLookupTable(), Utils.tokenize(toFields, KEY_TOKENIZER));
 				Map<String, String> keyValues = authorsDictionary.get(Utils.tokenize(joinValues, KEY_TOKENIZER));
 				
 				if(keyValues != null){

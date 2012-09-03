@@ -19,8 +19,8 @@ public class Indexer {
 	public static final int NO_BOOKS = 100000;
 	public static final int NO_AUTHORS = 10000*1;
 	public static final int NO_RATINGS = 10000*1;
-	public static final int NO_REVIEWERS = 10;
-	public static final int MAX_RATING = 10;
+	public static final int NO_REVIEWERS = 10000;
+	public static final int MAX_RATING = 10000;
 	
 	private IndexWriter bookIndexWriter;
 	private IndexWriter authorIndexWriter;
@@ -83,7 +83,7 @@ public class Indexer {
 			Document doc = new Document();
 		
 			doc.add(new Field("rating_id", i + "", Field.Store.YES, Field.Index.NOT_ANALYZED));
-			doc.add(new Field("reviewer", "reviewer" + random_reviewer, Field.Store.YES, Field.Index.NOT_ANALYZED));
+			doc.add(new Field("reviewer", "reviewer" + i, Field.Store.YES, Field.Index.NOT_ANALYZED));
 			doc.add(new Field("rating", String.valueOf(rating), Field.Store.YES, Field.Index.NOT_ANALYZED));
 			
 			this.ratingIndexWriter.addDocument(doc);

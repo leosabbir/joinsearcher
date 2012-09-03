@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.sql.rowset.Joinable;
+
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Fieldable;
@@ -23,7 +25,10 @@ import org.apache.lucene.util.Version;
 
 import com.immune.joinsearcher.factory.IndexFactory;
 import com.immune.joinsearcher.models.JoinCriteria;
+import com.immune.joinsearcher.models.JoinField;
 import com.immune.joinsearcher.models.constants.IndexTables;
+import com.immune.joinsearcher.models.constants.JoinOperators;
+import com.immune.joinsearcher.utils.QueryBuilder;
 
 public class JoinSearcherWithoutDictionary implements JoinSearcher{
 
@@ -57,12 +62,16 @@ public class JoinSearcherWithoutDictionary implements JoinSearcher{
 			BooleanQuery query;
 			for (JoinCriteria joinCriterium: joinCriteria) {
 				query = new BooleanQuery();
-				int sizeLimit = joinCriterium.getFromFields().length;
-				for (int i = 0; i < sizeLimit; i++) {
-					String fromfield = joinCriterium.getFromFields()[i];
-					String toField = joinCriterium.getToFields()[i];
+				//int sizeLimit = joinCriterium.getFromFields().length;
+				for (JoinField joinField : joinCriterium.getJoinFields()) {
+					String fromfield = joinField.getFromField();
+					String toField = joinField.getToField();
 					if(doc.get(fromfield) != null){
-						query.add(new TermQuery(new Term(toField, doc.get(fromfield))), BooleanClause.Occur.MUST);
+						if( !joinField.getJoinOperator().equals(JoinOperators.NOTEQUAL)) {
+							query.add(QueryBuilder.getQuery(toField, doc.get(fromfield), joinField.getJoinOperator()), BooleanClause.Occur.MUST);
+						}else {
+							query.add(QueryBuilder.getQuery(toField, doc.get(fromfield), joinField.getJoinOperator()), BooleanClause.Occur.MUST_NOT);
+						}
 					}else{
 						QueryParser queryParser= new QueryParser(Version.LUCENE_30, toField, new StandardAnalyzer(Version.LUCENE_30));
 						queryParser.setAllowLeadingWildcard(true);

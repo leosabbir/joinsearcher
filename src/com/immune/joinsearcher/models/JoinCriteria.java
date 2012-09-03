@@ -1,17 +1,17 @@
 package com.immune.joinsearcher.models;
 
+import java.util.List;
+
 import com.immune.joinsearcher.models.constants.IndexTables;
 
 public class JoinCriteria {
 	
 	private IndexTables lookupTable;
-	private String[] fromFields;
-	private String[] toFields;
+	private List<JoinField> joinFields;
 	
-	public JoinCriteria(IndexTables lookupTable, String[] fromFields, String[] toFields){
+	public JoinCriteria(IndexTables lookupTable, List<JoinField> joinFields){
 		this.lookupTable = lookupTable;
-		this.fromFields = fromFields;
-		this.toFields = toFields;
+		this.setJoinFields(joinFields);
 	}
 	
 	public IndexTables getLookupTable() {
@@ -20,19 +20,13 @@ public class JoinCriteria {
 	public void setLookupTable(IndexTables lookupTable) {
 		this.lookupTable = lookupTable;
 	}
-	public String[] getFromFields() {
-		return fromFields;
-	}
-	public void setFromFields(String[] fromFields) {
-		this.fromFields = fromFields;
-	}
-	public String[] getToFields() {
-		return toFields;
-	}
-	public void setToFields(String[] toFields) {
-		this.toFields = toFields;
-	}
-	
-	
 
+	public List<JoinField> getJoinFields() {
+		return joinFields;
+	}
+
+	public void setJoinFields(List<JoinField> joinFields) {
+		this.joinFields = joinFields;
+	}
+	
 }
